@@ -1,0 +1,53 @@
+{
+  "name": "cloud-coder-backend",
+  "version": "1.0.0",
+  "description": "Cloud-Coder is an easy-to-use online coding platform where you can sign up with your GitHub account, start coding instantly in a secure, cloud-based editor like VS Code, and work on projects from anywhere. Your code stays safe, and you get real-time updates as you create, perfect for developers and learners alike!",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "format": "prettier --write \"**/*.{js,json,md}\"",
+    "test": "jest --detectOpenHandles",
+    "prepare": "husky install"
+  },
+  "keywords": [
+    "cloud-coding",
+    "online-editor",
+    "code-editor",
+    "web-based-coding",
+    "secure-coding",
+    "docker",
+    "real-time-coding",
+    "developer-tools",
+    "coding-platform",
+    "vs-code"
+  ],
+  "author": "thesaiteja24",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thesaiteja24/cloud-coder-backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thesaiteja24/cloud-coder-backend/issues"
+  },
+  "homepage": "https://github.com/thesaiteja24/cloud-coder-backend#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.{js,json,md}": "prettier --write"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.5.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0"
+  }
+}
