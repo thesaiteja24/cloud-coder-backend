@@ -8,6 +8,11 @@ import routes from './routes/indexRoutes.js'
 import { extractUserIdAndIp } from './middlewares/extractUserIdAndIp.js'
 import './config/passport.js'
 
+// Implementing swagger
+import swaggerUi from 'swagger-ui-express'
+import swaggerJSDoc from 'swagger-jsdoc'
+import swagggerOptions from './config/swagger.js'
+
 configDotenv()
 
 const app = express()
@@ -23,6 +28,11 @@ app.use(express.json())
 app.use(extractUserIdAndIp)
 app.use(passport.initialize())
 app.use('/api', routes)
+
+// Swagger setup
+const swaggerSpec = swaggerJSDoc(swagggerOptions)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+
 app.use(
   morgan(':method :url :status :res[content-length] - :response-time ms', {
     stream: {
