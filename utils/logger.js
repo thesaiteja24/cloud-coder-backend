@@ -1,3 +1,4 @@
+// utils/logger.js
 import winston from 'winston'
 import path from 'path'
 import fs from 'fs'
@@ -27,11 +28,29 @@ const customLevels = {
 // ─────────────────────────────────────────────
 const logFormat = winston.format.combine(
   winston.format.timestamp(),
-  winston.format.printf(({ level, message, timestamp, ...meta }) => {
-    return `[${timestamp}] ${level.toUpperCase()}: ${message} ${
-      Object.keys(meta).length ? JSON.stringify(meta) : ''
-    }`
-  })
+  winston.format.printf(
+    ({ level, message, timestamp, userId, ip, ...meta }) => {
+      const userIdStr = userId ? `userId=${userId} ` : 'userId=anonymous '
+      const ipStr = ip ? `ip=${ip} ` : 'ip=unknown '
+      return `[${timestamp}] ${level.toUpperCase()}: ${userIdStr}${ipStr}${message} ${
+        Object.keys(meta).length ? JSON.stringify(meta) : ''
+      }`
+    }
+  )
+)
+
+const consoleFormat = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp(),
+  winston.format.printf(
+    ({ level, message, timestamp, userId, ip, ...meta }) => {
+      const userIdStr = userId ? `userId=${userId} ` : 'userId=anonymous '
+      const ipStr = ip ? `ip=${ip} ` : 'ip=unknown '
+      return `[${timestamp}] ${level}: ${userIdStr}${ipStr}${message} ${
+        Object.keys(meta).length ? JSON.stringify(meta) : ''
+      }`
+    }
+  )
 )
 
 // ─────────────────────────────────────────────
@@ -40,11 +59,11 @@ const logFormat = winston.format.combine(
 const transports = [
   new winston.transports.File({
     filename: path.join(logDir, 'error.log'),
-    level: 'error', // Only logs error-level and below (e.g., error only)
+    level: 'error',
   }),
   new winston.transports.File({
     filename: path.join(logDir, 'combined.log'),
-    level: 'info', // Includes info, warn, error, http
+    level: 'info',
   }),
   new winston.transports.File({
     filename: path.join(logDir, 'http.log'),
@@ -58,10 +77,8 @@ const transports = [
 if (process.env.NODE_ENV !== 'production') {
   transports.push(
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(), // Color for easier dev reading
-        winston.format.simple()
-      ),
+      format: consoleFormat,
+      level: 'debug',
     })
   )
 }
@@ -71,7 +88,7 @@ if (process.env.NODE_ENV !== 'production') {
 // ─────────────────────────────────────────────
 const logger = winston.createLogger({
   levels: customLevels,
-  level: 'http', // minimum level to log
+  level: process.env.NODE_ENV === 'production' ? 'http' : 'debug',
   format: logFormat,
   transports,
 })
@@ -79,24 +96,49 @@ const logger = winston.createLogger({
 // ─────────────────────────────────────────────
 // Helper methods for clean usage in app code
 // ─────────────────────────────────────────────
-export const logInfo = (msg, meta = {}) => logger.info(msg, meta)
-export const logWarn = (msg, meta = {}) => logger.warn(msg, meta)
-export const logDebug = (msg, meta = {}) => logger.debug(msg, meta)
-export const logHttp = (msg, meta = {}) => logger.http(msg, meta)
-export const logError = (msg, err, meta = {}) =>
+export const logInfo = (msg, meta = {}, req = null) =>
+  logger.info(msg, {
+    ...meta,
+    userId: req?.userId || null,
+    ip: req?.clientIp || null,
+  })
+export const logWarn = (msg, meta = {}, req = null) =>
+  logger.warn(msg, {
+    ...meta,
+    userId: req?.userId || null,
+    ip: req?.clientIp || null,
+  })
+export const logDebug = (msg, meta = {}, req = null) =>
+  logger.debug(msg, {
+    ...meta,
+    userId: req?.userId || null,
+    ip: req?.clientIp || null,
+  })
+export const logHttp = (msg, meta = {}, req = null) =>
+  logger.http(msg, {
+    ...meta,
+    userId: req?.userId || null,
+    ip: req?.clientIp || null,
+  })
+export const logError = (msg, err, meta = {}, req = null) =>
   logger.error(msg, {
     ...meta,
+    userId: req?.userId || null,
+    ip: req?.clientIp || null,
     error: err?.message || '',
     stack: err?.stack || '',
   })
 
 // ─────────────────────────────────────────────
 // Export Morgan-compatible stream for request logging
-// Used like: morgan(..., { stream: morganStream })
 // ─────────────────────────────────────────────
 export const morganStream = {
-  write: message => {
-    logger.http(message.trim())
+  write: (message, req) => {
+    // Pass userId and clientIp from req if available
+    logger.http(message.trim(), {
+      userId: req?.userId || null,
+      ip: req?.clientIp || null,
+    })
   },
 }
 
