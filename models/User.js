@@ -18,6 +18,8 @@ const userSchema = new mongoose.Schema(
       },
     },
     refreshToken: { type: String },
+    resetPasswordToken: { type: String },
+    resetPasswordExpiry: { type: Date },
   },
   { _id: false }
 )

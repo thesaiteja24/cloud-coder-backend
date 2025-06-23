@@ -6,6 +6,7 @@ import morgan from 'morgan'
 import { morganStream, logInfo, logError } from './utils/logger.js'
 import routes from './routes/indexRoutes.js'
 import { extractUserIdAndIp } from './middlewares/extractUserIdAndIp.js'
+import './config/passport.js'
 
 configDotenv()
 
@@ -45,7 +46,7 @@ mongoose
     logError('Failed to establish connection', error, {}, mockReq)
   )
 
-app.get('/ping', (req, res) => {
+app.get('/api/ping', (req, res) => {
   logInfo('Pong', {}, req)
   res.send('Pong')
 })
