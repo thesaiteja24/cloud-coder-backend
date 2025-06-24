@@ -10,6 +10,6 @@ const authLimiter = rateLimit({
   message: { message: 'Too many attempts, please try again after 15 minutes' },
 })
 
-router.use('/auth', authLimiter, authRoutes)
+router.use('/auth', authRoutes)
 
 export default router

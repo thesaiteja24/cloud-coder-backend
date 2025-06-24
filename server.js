@@ -7,6 +7,8 @@ import { morganStream, logInfo, logError } from './utils/logger.js'
 import routes from './routes/indexRoutes.js'
 import { extractUserIdAndIp } from './middlewares/extractUserIdAndIp.js'
 import './config/passport.js'
+import cors from 'cors'
+import helmet from 'helmet'
 
 // Implementing swagger
 import swaggerUi from 'swagger-ui-express'
@@ -27,6 +29,8 @@ morgan.token('client-ip', req => req.clientIp || 'unknown')
 app.use(express.json())
 app.use(extractUserIdAndIp)
 app.use(passport.initialize())
+app.use(cors())
+app.use(helmet())
 app.use('/api', routes)
 
 // Swagger setup
@@ -46,6 +50,11 @@ app.use(
     },
   })
 )
+
+app.use((err, req, res, next) => {
+  logError('Unexpected error', err, {}, req)
+  res.status(500).json({ status: 'error', message: 'Internal server error' })
+})
 
 mongoose
   .connect(process.env.MONGO_URI, {
