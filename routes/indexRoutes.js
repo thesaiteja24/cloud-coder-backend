@@ -1,5 +1,6 @@
 import express from 'express'
 import authRoutes from './authRoutes.js'
+import workSpaceRoutes from './workspaceRoutes.js'
 import rateLimit from 'express-rate-limit'
 
 const router = express.Router()
@@ -10,6 +11,7 @@ const authLimiter = rateLimit({
   message: { message: 'Too many attempts, please try again after 15 minutes' },
 })
 
-router.use('/auth', authRoutes)
+router.use('/auth', authLimiter, authRoutes)
+router.use('/workspace', workSpaceRoutes)
 
 export default router

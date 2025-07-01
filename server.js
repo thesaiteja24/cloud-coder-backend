@@ -9,12 +9,10 @@ import { extractUserIdAndIp } from './middlewares/extractUserIdAndIp.js'
 import './config/passport.js'
 import cors from 'cors'
 import helmet from 'helmet'
-
 // Implementing swagger
 import swaggerUi from 'swagger-ui-express'
 import swaggerJSDoc from 'swagger-jsdoc'
 import swagggerOptions from './config/swagger.js'
-
 configDotenv()
 
 const app = express()
