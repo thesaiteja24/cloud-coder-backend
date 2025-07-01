@@ -1,6 +1,6 @@
 import express from 'express'
-import authRoutes from './authRoutes.js'
-import workSpaceRoutes from './workspaceRoutes.js'
+import authRoutes from './auth.routes.js'
+import workSpaceRoutes from './wokrspace.routes.js'
 import rateLimit from 'express-rate-limit'
 
 const router = express.Router()

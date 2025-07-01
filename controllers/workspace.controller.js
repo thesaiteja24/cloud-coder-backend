@@ -16,7 +16,7 @@ const getAvailablePort = async () => {
     .map(c => c.Ports[0]?.PublicPort)
     .filter(Boolean)
   let port = 8081
-  while (usedPorts.includes(port)) port++
+  while (usedPorts.includes(port) || port === 8443) port++
   return port
 }
 

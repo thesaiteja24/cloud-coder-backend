@@ -3,7 +3,7 @@ import { Strategy as GitHubStrategy } from 'passport-github2'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import { Strategy as LocalStrategy } from 'passport-local'
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt'
-import User from '../models/User.js'
+import User from '../models/user.model.js'
 import { configDotenv } from 'dotenv'
 
 configDotenv()

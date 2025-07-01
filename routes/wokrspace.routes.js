@@ -1,6 +1,6 @@
 import express from 'express'
 import passport from 'passport'
-import { startWorkspace } from '../controllers/workspaceController.js'
+import { startWorkspace } from '../controllers/workspace.controller.js'
 
 const router = express.Router()
 

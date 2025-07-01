@@ -1,4 +1,3 @@
-// routes/indexRoutes.js
 import express from 'express'
 import passport from 'passport'
 import { body, validationResult } from 'express-validator'
@@ -11,7 +10,7 @@ import {
   logout,
   forgotPassword,
   resetPassword,
-} from '../controllers/authController.js'
+} from '../controllers/auth.controller.js'
 import { logWarn } from '../utils/logger.js'
 
 const router = express.Router()
