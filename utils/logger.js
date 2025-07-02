@@ -99,32 +99,32 @@ const logger = winston.createLogger({
 export const logInfo = (msg, meta = {}, req = null) =>
   logger.info(msg, {
     ...meta,
-    userId: req?.userId || null,
-    ip: req?.clientIp || null,
+    userId: req?.user?._id || null,
+    ip: req.ip || req.ips?.[0] || 'unknown',
   })
 export const logWarn = (msg, meta = {}, req = null) =>
   logger.warn(msg, {
     ...meta,
-    userId: req?.userId || null,
-    ip: req?.clientIp || null,
+    userId: req?.user?._id || null,
+    ip: req.ip || req.ips?.[0] || 'unknown',
   })
 export const logDebug = (msg, meta = {}, req = null) =>
   logger.debug(msg, {
     ...meta,
-    userId: req?.userId || null,
-    ip: req?.clientIp || null,
+    userId: req?.user?._id || null,
+    ip: req.ip || req.ips?.[0] || 'unknown',
   })
 export const logHttp = (msg, meta = {}, req = null) =>
   logger.http(msg, {
     ...meta,
-    userId: req?.userId || null,
-    ip: req?.clientIp || null,
+    userId: req?.user?._id || null,
+    ip: req.ip || req.ips?.[0] || 'unknown',
   })
 export const logError = (msg, err, meta = {}, req = null) =>
   logger.error(msg, {
     ...meta,
-    userId: req?.userId || null,
-    ip: req?.clientIp || null,
+    userId: req?.user?._id || null,
+    ip: req.ip || req.ips?.[0] || 'unknown',
     error: err?.message || '',
     stack: err?.stack || '',
   })
@@ -136,8 +136,8 @@ export const morganStream = {
   write: (message, req) => {
     // Pass userId and clientIp from req if available
     logger.http(message.trim(), {
-      userId: req?.userId || null,
-      ip: req?.clientIp || null,
+      userId: req?.user?._id || null,
+      ip: req.ip || req.ips?.[0] || 'unknown',
     })
   },
 }

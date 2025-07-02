@@ -5,7 +5,6 @@ import { configDotenv } from 'dotenv'
 import morgan from 'morgan'
 import { morganStream, logInfo, logError } from './utils/logger.js'
 import routes from './routes/index.routes.js'
-import { extractUserIdAndIp } from './middlewares/extractUserIdAndIp.js'
 import './config/passport.js'
 import cors from 'cors'
 import http from 'http'
@@ -22,13 +21,12 @@ const app = express()
 const PORT = process.env.PORT
 
 // Mock req for non-request contexts (e.g., server startup, MongoDB connection)
-const mockReq = { userId: null, clientIp: '127.0.0.1' }
+const mockReq = { userId: null, ip: '127.0.0.1' }
 
-morgan.token('user-id', req => req.userId || 'anonymous')
-morgan.token('client-ip', req => req.clientIp || 'unknown')
+morgan.token('user-id', req => req.user?._id || 'anonymous')
+morgan.token('client-ip', req => req.ip || req.ips?.[0] || 'unknown')
 
 app.use(express.json())
-app.use(extractUserIdAndIp)
 app.use(passport.initialize())
 app.use(cors())
 app.use(helmet())

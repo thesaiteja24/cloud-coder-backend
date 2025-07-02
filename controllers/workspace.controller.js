@@ -24,8 +24,7 @@ const getAvailablePort = async () => {
 }
 
 export const startWorkspace = async (req, res) => {
-  const userId = req.userId
-  console.log('Loggin req:', req)
+  const userId = req.user._id
   try {
     // Check if the specific image exists
     const images = await docker.listImages()

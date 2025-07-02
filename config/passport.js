@@ -97,11 +97,12 @@ passport.use(
     },
     async (jwtPayload, done) => {
       try {
-        const user = await User.findById(jwtPayload.id)
-        if (!user) {
-          return done(null, false)
+        // Optional lightweight check (e.g., existence)
+        const userExists = await User.exists({ _id: jwtPayload.id })
+        if (!userExists) {
+          return done(null, false) // Reject if user doesn't exist
         }
-        return done(null, user)
+        return done(null, { _id: jwtPayload.id })
       } catch (err) {
         return done(err)
       }
@@ -109,11 +110,15 @@ passport.use(
   )
 )
 
-passport.serializeUser((user, done) => done(null, user.id))
+passport.serializeUser((user, done) => done(null, user._id))
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await User.findById(id)
-    done(null, user)
+    // Optional existence check
+    const userExists = await User.exists({ _id: id })
+    if (!userExists) {
+      return done(null, false)
+    }
+    done(null, { _id: id })
   } catch (err) {
     done(err)
   }
