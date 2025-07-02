@@ -1,6 +1,7 @@
 import Docker from 'dockerode'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { logInfo, logError, logDebug } from '../utils/logger.js'
+import { emitToUser } from '../services/websocket.js'
 
 const docker = new Docker()
 const s3 = new S3Client({
@@ -32,6 +33,7 @@ export const startWorkspace = async (req, res) => {
 
     // Pull the image if it doesn't exist
     if (!imageExists) {
+      emitToUser(userId, 'progress', { message: 'Pulling image ...' })
       logInfo(
         'Image not found, pulling codercom/code-server:4.101.2-39',
         { userId },
@@ -40,19 +42,40 @@ export const startWorkspace = async (req, res) => {
       await new Promise((resolve, reject) => {
         docker.pull(desiredImage, (err, stream) => {
           if (err) return reject(err)
-          docker.modem.followProgress(stream, (err, output) =>
-            err ? reject(err) : resolve(output)
+          docker.modem.followProgress(
+            stream,
+            (err, output) => {
+              if (err) return reject(err)
+              emitToUser(userId, 'progress', {
+                message: 'Image pulled successfully',
+              })
+              logInfo('Image pulled successfully', { userId }, req)
+              resolve(output)
+            },
+            progress => {
+              // Live progress update
+              const message = progress.status || 'Pulling...'
+              const detail = progress.progressDetail || {}
+              const progressUpdate = {
+                message: message,
+                current: detail.current || 0,
+                total: detail.total || 0,
+              }
+              emitToUser(userId, 'progressUpdate', progressUpdate) // Custom event for live updates
+            }
           )
         })
       })
-      logInfo('Image pulled successfully', { userId }, req)
     }
-
     const containers = await docker.listContainers({ all: true })
     const existingContainer = containers.find(c =>
       c.Names.includes(`/code-server-${userId}`)
     )
     if (existingContainer) {
+      emitToUser(userId, 'success', {
+        message: 'Workspace already running',
+        workspaceUrl: `http://localhost:${existingContainer.Ports[0].PublicPort}`,
+      })
       logInfo('Workspace already running', { userId }, req)
       return res.json({
         status: 'success',
@@ -76,6 +99,7 @@ export const startWorkspace = async (req, res) => {
     )
 
     // Start a new code-server container
+    emitToUser(userId, 'progress', { message: 'Starting container...' })
     const container = await docker.createContainer({
       Image: desiredImage, // Use the specific version
       name: `code-server-${userId}`,
@@ -90,6 +114,10 @@ export const startWorkspace = async (req, res) => {
     })
 
     await container.start()
+    emitToUser(userId, 'success', {
+      message: 'Workspace started',
+      workspaceUrl: `http://localhost:${port}`,
+    })
     logInfo('Workspace started', { userId, port }, req)
     res.json({
       status: 'success',
@@ -97,6 +125,10 @@ export const startWorkspace = async (req, res) => {
       data: { workspaceUrl: `http://localhost:${port}` },
     })
   } catch (err) {
+    emitToUser(userId, 'error', {
+      message: 'Failed to start workspace',
+      error: err.message,
+    })
     logError('Failed to start workspace', err, { userId }, req)
     res
       .status(500)

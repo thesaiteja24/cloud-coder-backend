@@ -8,11 +8,14 @@ import routes from './routes/index.routes.js'
 import { extractUserIdAndIp } from './middlewares/extractUserIdAndIp.js'
 import './config/passport.js'
 import cors from 'cors'
+import http from 'http'
 import helmet from 'helmet'
 // Implementing swagger
 import swaggerUi from 'swagger-ui-express'
 import swaggerJSDoc from 'swagger-jsdoc'
 import swagggerOptions from './config/swagger.js'
+import { initSocket } from './services/websocket.js'
+
 configDotenv()
 
 const app = express()
@@ -68,6 +71,9 @@ app.get('/api/ping', (req, res) => {
   res.send('Pong')
 })
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = http.createServer(app)
+initSocket(server)
+
+server.listen(PORT, '0.0.0.0', () => {
   logInfo(`Server Running on http://localhost:${PORT}`, {}, mockReq)
 })
