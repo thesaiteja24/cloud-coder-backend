@@ -7,7 +7,6 @@ const router = express.Router()
 router.post(
   '/start',
   passport.authenticate('jwt', { session: false }),
-
   startWorkspace
 )
 

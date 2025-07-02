@@ -8,6 +8,7 @@ export const extractUserIdAndIp = (req, res, next) => {
     const token = authHeader.split(' ')[1]
     try {
       const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET)
+      console.log(payload)
       req.userId = payload.id
     } catch (err) {
       req.userId = null // Invalid or expired token

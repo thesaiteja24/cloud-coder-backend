@@ -1,6 +1,7 @@
 import { configDotenv } from 'dotenv'
 import mongoose from 'mongoose'
 import User from './models/User'
+import Workspace from './models/workspace.model'
 
 configDotenv()
 
@@ -24,6 +25,7 @@ async function main() {
     console.log('✅ Connected to MongoDB')
 
     await syncModelIndexes(User, 'User')
+    await syncModelIndexes(Workspace, 'Workspace')
 
     // Add other models here if needed:
     // await syncModelIndexes(Post, 'Post');

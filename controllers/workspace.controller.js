@@ -2,6 +2,8 @@ import Docker from 'dockerode'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { logInfo, logError, logDebug } from '../utils/logger.js'
 import { emitToUser } from '../services/websocket.js'
+import Workspace from '../models/workspace.model.js'
+import { v4 as uuidv4 } from 'uuid'
 
 const docker = new Docker()
 const s3 = new S3Client({
@@ -22,7 +24,8 @@ const getAvailablePort = async () => {
 }
 
 export const startWorkspace = async (req, res) => {
-  const userId = req.user._id
+  const userId = req.userId
+  console.log('Loggin req:', req)
   try {
     // Check if the specific image exists
     const images = await docker.listImages()
@@ -67,16 +70,30 @@ export const startWorkspace = async (req, res) => {
         })
       })
     }
+
+    // Generate a unquie workspace id (using time as id)
+    const workspaceId = uuidv4()
+    // generate a container name using userID and containerId
+    const containerName = `cloud-coder-${userId}-${workspaceId}`
+
     const containers = await docker.listContainers({ all: true })
     const existingContainer = containers.find(c =>
-      c.Names.includes(`/code-server-${userId}`)
+      c.Names.includes(`/cloud-coder-${userId}-${workspaceId}`)
     )
     if (existingContainer) {
+      const workspaceUrl = `http://localhost:${existingContainer.Ports[0].PublicPort}`
       emitToUser(userId, 'success', {
         message: 'Workspace already running',
         workspaceUrl: `http://localhost:${existingContainer.Ports[0].PublicPort}`,
       })
       logInfo('Workspace already running', { userId }, req)
+
+      await Workspace.findOneAndUpdate(
+        { userId, _id: workspaceId },
+        { workspaceUrl: workspaceUrl },
+        { upsert: true, new: true }
+      )
+
       return res.json({
         status: 'success',
         message: 'Workspace already running',
@@ -91,38 +108,51 @@ export const startWorkspace = async (req, res) => {
 
     // Create user-specific S3 directory if it doesn't exist
     const bucket = process.env.AWS_S3_BUCKET
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: `users/${userId}/`,
-      })
-    )
+    // await s3.send(
+    //   new PutObjectCommand({
+    //     Bucket: bucket,
+    //     Key: `users/${userId}/workspaces/${workspaceId}/`,
+    //   })
+    // )
+
+    // Create volume for the workspace
+    await docker.createVolume({ Name: `${userId}-${workspaceId}-data` })
 
     // Start a new code-server container
     emitToUser(userId, 'progress', { message: 'Starting container...' })
     const container = await docker.createContainer({
       Image: desiredImage, // Use the specific version
-      name: `code-server-${userId}`,
+      name: containerName,
       Env: [
         `PASSWORD=${process.env.CODE_SERVER_PASSWORD}`,
         `DEFAULT_WORKSPACE=/home/coder/project`,
       ],
       HostConfig: {
-        Binds: [`${userId}-data:/home/coder/project`],
+        Binds: [`${userId}-${workspaceId}-data:/home/coder/project`],
         PortBindings: { '8080/tcp': [{ HostPort: `${port}` }] },
       },
     })
 
     await container.start()
+    const workspaceUrl = `http://localhost:${port}`
     emitToUser(userId, 'success', {
       message: 'Workspace started',
-      workspaceUrl: `http://localhost:${port}`,
+      workspaceUrl,
     })
-    logInfo('Workspace started', { userId, port }, req)
+    logInfo('Workspace started', { userId, workspaceId, port }, req)
+
+    // Save new workspace to database
+    await Workspace.create({
+      _id: workspaceId,
+      userId,
+      workspaceUrl: workspaceUrl,
+      status: 'running',
+    })
+
     res.json({
       status: 'success',
       message: 'Workspace started',
-      data: { workspaceUrl: `http://localhost:${port}` },
+      data: { workspaceUrl: workspaceUrl },
     })
   } catch (err) {
     emitToUser(userId, 'error', {

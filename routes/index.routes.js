@@ -2,6 +2,7 @@ import express from 'express'
 import authRoutes from './auth.routes.js'
 import workSpaceRoutes from './wokrspace.routes.js'
 import rateLimit from 'express-rate-limit'
+import { checkWorkspaceLimits } from '../middlewares/checkWorkspaceLimits.js'
 
 const router = express.Router()
 
@@ -12,6 +13,6 @@ const authLimiter = rateLimit({
 })
 
 router.use('/auth', authLimiter, authRoutes)
-router.use('/workspace', workSpaceRoutes)
+router.use('/workspace', checkWorkspaceLimits, workSpaceRoutes)
 
 export default router
